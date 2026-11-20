@@ -54,9 +54,10 @@ ${index && !voorbeeld ? `<link rel="canonical" href="${canoniek}">` : '<meta nam
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin>
 <script src="/js/thema.js"></script>
+<script src="/js/vroeg.js"></script>
 <link rel="stylesheet" href="/css/stijl.css">
 ${script ? `<script type="module" src="/js/${script}"></script>` : ""}
 </head>
