@@ -122,19 +122,39 @@ try {
     </div></div>`;
   carrousel(held, gekozen);
 
-  // Het lint: alle namen in de selectie, in twee tegengestelde banen.
-  const namen = oplossingen.map((o) => `<span>${esc(o.naam)}<i>${esc(o.organisatie)}</i></span>`);
-  const helft = Math.ceil(namen.length / 2);
-  const baan = (lijst, klas) => `<div class="lint-baan ${klas}"><div>${lijst.join("")}${lijst.join("")}</div></div>`;
-  document.querySelector("#lint").innerHTML = baan(namen.slice(0, helft), "") + baan(namen.slice(helft), "lint-terug");
-
-  // Acht genomineerden, zo veel mogelijk uit verschillende sectoren.
-  const rij = open.filter((o) => !gekozen.includes(o)).sort((a, b) => (b.toegevoegd ?? "").localeCompare(a.toegevoegd ?? "") || a.id.localeCompare(b.id));
+  // De selectie als lijst van grote namen: de naam waar je op staat wordt
+  // zwart en krijgt haar affiche erbij. Tien genomineerden, zo veel mogelijk
+  // uit verschillende sectoren. Dezelfde tien staan ook als raster klaar.
+  // Alleen korte namen: een naam moet op één regel passen.
+  const rij = open.filter((o) => !gekozen.includes(o) && o.naam.length <= 18).sort((a, b) => (b.toegevoegd ?? "").localeCompare(a.toegevoegd ?? "") || a.id.localeCompare(b.id));
   const sectorGezien = new Set();
   const keuze = [];
-  for (const o of rij) if (keuze.length < 8 && !sectorGezien.has(o.sector)) (keuze.push(o), sectorGezien.add(o.sector));
-  for (const o of rij) if (keuze.length < 8 && !keuze.includes(o)) keuze.push(o);
-  document.querySelector("#genomineerd").innerHTML = keuze.map((o) => kaart(o, BASIS)).join("");
+  for (const o of rij) if (keuze.length < 10 && !sectorGezien.has(o.sector)) (keuze.push(o), sectorGezien.add(o.sector));
+  for (const o of rij) if (keuze.length < 10 && !keuze.includes(o)) keuze.push(o);
+  const index = document.querySelector("#index");
+  const lijst = document.querySelector("#index-lijst");
+  const beeld = document.querySelector("#index-beeld");
+  const raster = document.querySelector("#genomineerd");
+  lijst.innerHTML = keuze
+    .map((o, i) => `<li><a href="${esc(adresVan(o, BASIS))}" data-i="${i}"><span class="index-nr">${String(i + 1).padStart(2, "0")}</span><span class="index-naam">${esc(o.naam)}</span><span class="index-org">${esc(o.organisatie)}<br>${esc(o.sector)}</span></a></li>`)
+    .join("");
+  raster.innerHTML = keuze.slice(0, 8).map((o) => kaart(o, BASIS)).join("");
+  const kies = (a) => {
+    for (const li of lijst.children) li.classList.toggle("actief", li.firstElementChild === a);
+    if (!a) return index.classList.remove("heeft-beeld");
+    beeld.innerHTML = poster(keuze[Number(a.dataset.i)]);
+    beeld.style.setProperty("--y", `${a.parentElement.offsetTop + a.parentElement.offsetHeight / 2}px`);
+    index.classList.add("heeft-beeld");
+  };
+  lijst.addEventListener("pointerover", (e) => e.pointerType === "mouse" && e.target.closest("a") && kies(e.target.closest("a")));
+  lijst.addEventListener("focusin", (e) => kies(e.target.closest("a")));
+  if (matchMedia("(hover: hover)").matches && lijst.firstElementChild) kies(lijst.firstElementChild.firstElementChild);
+  const zetWeergave = (welke) => {
+    index.hidden = welke !== "lijst";
+    raster.hidden = welke === "lijst";
+    for (const k of document.querySelectorAll("[data-index]")) k.setAttribute("aria-pressed", String(k.dataset.index === welke));
+  };
+  for (const k of document.querySelectorAll("[data-index]")) k.addEventListener("click", () => zetWeergave(k.dataset.index));
 
   document.querySelector("#winnaars").innerHTML = winnaars.length
     ? `<div class="raster">${winnaars.slice(0, 4).map((o) => kaart(o, BASIS)).join("")}</div>`

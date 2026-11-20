@@ -4,7 +4,7 @@ Een platform dat AI-oplossingen toont die in Nederland echt in gebruik zijn, en 
 
 ## Wat er is
 
-- **Openbare site:** start met een carrousel, oplossingen (filters links, zoeken, raster en lijst), een vaste pagina per oplossing, winnaars, collecties, een directory met een profiel per organisatie en maker, jury, werkwijze, inzenden, over, contact, privacy en voorwaarden.
+- **Openbare site:** start met een carrousel en de selectie als index van grote namen, oplossingen (filters links, zoeken, raster en lijst), een vaste pagina per oplossing, winnaars, collecties, een directory met een profiel per organisatie en maker, jury, werkwijze, inzenden, over, contact, privacy en voorwaarden.
 - **Navigatie:** een dok onderaan met het ontdekmenu, en zoeken over de hele selectie met `/` of Cmd+K. Licht en donker thema. Het lettertype is Inter Tight.
 - **Juryomgeving** (`/account/`): inloggen met een persoonlijke code, een wachtrij, beoordelen op vijf criteria met toelichting, en terugtrekken bij een belang.
 - **Beheer** (`/beheer/`): inzendingen lezen en publiceren, juryleden toevoegen en codes uitgeven, aanmeldingen en berichten afhandelen, een vermelding verbergen.

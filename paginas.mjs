@@ -12,7 +12,7 @@ const honingpot = `<p class="verborgen" aria-hidden="true"><label>Laat dit veld 
 const criteriaBand = (g) => `
 <section class="band band-donker">
   <div class="breed">
-    <div class="blok-kop"><h2>Vijf criteria, <em>één cijfer</em></h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p><a class="pijl" href="/werkwijze/">De volledige werkwijze</a></div>
+    <div class="blok-kop"><h2>Vijf criteria, <em>één</em> cijfer</h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p><a class="pijl" href="/werkwijze/">De volledige werkwijze</a></div>
     <ol class="criteria">
       ${g.CRITERIA.map((c) => `<li data-onthul><span class="gewicht">${c.gewicht}<small>%</small></span><h3>${esc(c.naam)}</h3><p>${esc(c.vraag)}</p></li>`).join("")}
     </ol>
@@ -25,21 +25,30 @@ const start = (g, basis) => `
 <h1 class="sr">Wairthy, de award voor AI die werkt</h1>
 <section class="held" id="held" aria-label="In de schijnwerper" aria-roledescription="carrousel"><div class="breed held-leeg"><p class="meta">De selectie wordt geladen.</p></div></section>
 
-<div class="lint" id="lint" aria-hidden="true"></div>
-
-<section class="breed leus">
-  <p data-onthul>Wairthy is de Nederlandse award voor <em>AI die in de praktijk werkt</em>. Een vakjury beoordeelt elke oplossing op vijf criteria, en alle cijfers zijn openbaar.</p>
-  <dl class="tellers">
-    <div><dd id="tel-oplossingen" data-tel>${g.aantal}</dd><dt>oplossingen in de selectie</dt></div>
-    <div><dd id="tel-sectoren" data-tel>&nbsp;</dd><dt>sectoren</dt></div>
-    <div><dd id="tel-winnaars" data-tel>&nbsp;</dd><dt>onderscheidingen</dt></div>
-    <div><dd id="tel-jury" data-tel>&nbsp;</dd><dt>juryleden</dt></div>
+<section class="breed intro">
+  <p class="intro-woorden" aria-hidden="true"><span>Wairthy</span><span>/NL</span><span>(2026)</span></p>
+  <div class="intro-tekst">
+    <p><b>(1)</b>Wairthy is de Nederlandse award voor AI die in de praktijk werkt. Een oplossing komt alleen in de selectie als ze in gebruik is of publiek wordt getest.</p>
+    <p><b>(2)</b>Een vakjury beoordeelt elke oplossing op vijf criteria. Alle cijfers zijn openbaar, met de naam van het jurylid erbij.</p>
+  </div>
+  <dl class="intro-stand">
+    <div><dd id="tel-oplossingen">${g.aantal}</dd><dt>Oplossingen</dt></div>
+    <div><dd id="tel-sectoren">&nbsp;</dd><dt>Sectoren</dt></div>
+    <div><dd id="tel-winnaars">&nbsp;</dd><dt>Onderscheidingen</dt></div>
+    <div><dd id="tel-jury">&nbsp;</dd><dt>Juryleden</dt></div>
   </dl>
 </section>
 
-<section class="breed blok">
-  <div class="blok-kop"><h2>Genomineerd<sup id="tel-open"></sup></h2><p>In de selectie, in afwachting van de jury.</p><a class="pijl" href="${basis}/oplossingen/?stand=genomineerd">Alle genomineerden</a></div>
-  <div class="raster" id="genomineerd"></div>
+<section class="blok selectie">
+  <div class="breed blok-kop"><h2>De selectie<sup id="tel-open"></sup></h2><p>Genomineerd, in afwachting van de jury.</p>
+    <div class="weergave" role="group" aria-label="Weergave van de selectie">
+      <button type="button" data-index="lijst" aria-pressed="true">Lijst</button>
+      <button type="button" data-index="raster" aria-pressed="false">Raster</button>
+    </div>
+  </div>
+  <div class="index" id="index"><ol id="index-lijst"></ol><div class="index-beeld" id="index-beeld" aria-hidden="true"></div></div>
+  <div class="breed"><div class="raster" id="genomineerd" hidden></div></div>
+  <p class="breed index-meer"><a class="pijl" href="${basis}/oplossingen/">Alle ${g.aantal} oplossingen</a></p>
 </section>
 
 <section class="breed blok" id="winnaars-blok">
