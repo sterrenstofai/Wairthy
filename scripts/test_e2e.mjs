@@ -146,7 +146,7 @@ await p.goto(`${BASIS}/oplossingen/?zoek=Testhulp`);
 await p.waitForSelector(".kaart");
 await p.click(".kaart-link");
 await p.waitForSelector(".detail-kop h1");
-assert.match((await p.textContent(".detail-kop h1")).trim(), /^Testhulp/);
+assert.equal((await p.textContent(".detail-kop h1")).trim(), "Testhulp");
 await p.goto(`${BASIS}/jury/`);
 await p.waitForSelector(".juryleden li");
 assert.equal(await p.locator(".juryleden li").count(), 3);

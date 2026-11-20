@@ -93,21 +93,15 @@ export function vingerafdruk(perCriterium, klas = "") {
   return `<svg class="vingerafdruk ${klas}" viewBox="0 0 100 100" role="img" aria-label="${perCriterium ? "Cijfers per criterium als vijfhoek" : "Nog geen cijfers"}">${ringen}${assen}${vorm}</svg>`;
 }
 
-// De naam met het jaar van ingebruikname erachter, zoals op een etiket.
-export function naamMetJaar(o) {
-  return `${esc(o.naam)}${o.sinds ? `<sup>(${esc(o.sinds)})</sup>` : ""}`;
-}
-
 export function kaart(o, basis = "") {
   const d = o.oordeel;
-  const stand = d?.compleet ? `<span class="kaart-cijfer kaart-cijfer-${d.onderscheiding?.id ?? "beoordeeld"}">${esc(d.onderscheiding?.naam ?? "Beoordeeld")} <b>${toonCijfer(d.eindcijfer)}</b></span>` : etiket(o);
+  const cijfer = d?.compleet ? `<span class="kaart-cijfer kaart-cijfer-${d.onderscheiding?.id ?? "beoordeeld"}" aria-label="Eindcijfer ${toonCijfer(d.eindcijfer)}">${toonCijfer(d.eindcijfer)}</span>` : "";
   return `<article class="kaart" data-id="${esc(o.id)}">
-    <a class="kaart-link" href="${esc(adresVan(o, basis))}">
-      <div class="kaart-beeld">${poster(o)}</div>
+    <a class="kaart-link" href="${esc(adresVan(o, basis))}" data-wijzer="Bekijk">
+      <div class="kaart-beeld">${poster(o)}${cijfer}<span class="kaart-soort">${esc(o.type)}</span></div>
       <div class="kaart-lijf">
-        <h3>${naamMetJaar(o)}</h3>
-        <p class="kaart-org">${esc(o.organisatie)}</p>
-        <p class="kaart-voet"><span>${esc(o.sector)}</span>${stand}</p>
+        <div class="kaart-kop"><h3>${esc(o.naam)}</h3>${etiket(o)}</div>
+        <p class="kaart-org">${plaatje(o.organisatie, "plaatje-klein")}<span>${esc(o.organisatie)}</span><span class="kaart-sector">${esc(o.sector)}</span></p>
       </div>
     </a>
   </article>`;
@@ -162,7 +156,7 @@ export function scoreHTML(o, jury = []) {
   return `<div class="score score-${soort}">
     <div class="score-eind">
       <p class="meta">Oordeel van de jury</p>
-      <p class="score-cijfer">${compleet ? toonCijfer(d.eindcijfer) : "–"}<sup>(/10)</sup></p>
+      <p class="score-cijfer">${compleet ? toonCijfer(d.eindcijfer) : "–"}<small>/10</small></p>
       <p class="score-uitleg">${compleet ? `<b>${esc(d.onderscheiding?.naam ?? "Beoordeeld")}</b> · ` : ""}${esc(waarom)}</p>
     </div>
     <ul class="score-criteria">${criteria}</ul>
@@ -179,14 +173,14 @@ export function detailHTML(o, basis = "") {
     })
     .join("");
   const eersteBron = veiligAdres(o.bronnen?.[0]?.url);
-  const makers = (o.gebouwdMet ?? []).map((m) => `<a class="naamlink" href="${profielAdres(m, basis)}">${esc(m)}</a>`).join("");
+  const makers = (o.gebouwdMet ?? []).map((m) => `<a class="naamlink" href="${profielAdres(m, basis)}">${plaatje(m, "plaatje-klein")}${esc(m)}</a>`).join("");
 
-  return `<header class="detail-kop">
-    <div class="breed"><p class="kruimel"><a href="${basis}/oplossingen/">Oplossingen</a><span aria-hidden="true">/</span><a href="${basis}/oplossingen/?sector=${encodeURIComponent(o.sector)}">${esc(o.sector)}</a></p></div>
-    <h1 class="${lengteKlas(o.naam)}">${naamMetJaar(o)}</h1>
-    <div class="breed detail-regel">
-      <p class="detail-credits"><span class="meta">Van</span><a class="naamlink" href="${profielAdres(o.organisatie, basis)}">${esc(o.organisatie)}</a>${makers ? `<span class="meta">Gebouwd met</span>${makers}` : ""}</p>
-      <p class="detail-acties"><span data-etiket>${etiket(o)}</span>${eersteBron ? `<a class="knop knop-klein" href="${esc(eersteBron)}" rel="noopener nofollow">Lees de bron <span aria-hidden="true">↗</span></a>` : ""}<button class="knop knop-lijn knop-klein" type="button" data-deel>Kopieer de link</button></p>
+  return `<header class="detail-kop breed">
+    <p class="kruimel"><a href="${basis}/oplossingen/">Oplossingen</a><span aria-hidden="true">/</span><a href="${basis}/oplossingen/?sector=${encodeURIComponent(o.sector)}">${esc(o.sector)}</a></p>
+    <h1 class="${lengteKlas(o.naam)}">${esc(o.naam)}</h1>
+    <div class="detail-regel">
+      <p class="detail-credits"><span class="meta">Van</span><a class="naamlink" href="${profielAdres(o.organisatie, basis)}">${plaatje(o.organisatie, "plaatje-klein")}${esc(o.organisatie)}</a>${makers ? `<span class="meta">Gebouwd met</span>${makers}` : ""}</p>
+      <p class="detail-acties"><span data-etiket>${etiket(o)}</span>${eersteBron ? `<a class="knop" href="${esc(eersteBron)}" rel="noopener nofollow">Lees de bron <span aria-hidden="true">↗</span></a>` : ""}<button class="knop knop-lijn" type="button" data-deel>Kopieer de link</button></p>
     </div>
   </header>
   <div class="breed"><div class="podium" style="${vlakStijl(o)}">${poster(o)}</div></div>
@@ -233,7 +227,7 @@ export function detailHTML(o, basis = "") {
 
 // Eén regel in de directory.
 export function profielRij(p, plek, basis = "") {
-  return `<li class="dir-rij"><a href="${profielAdres(p.naam, basis)}">
+  return `<li class="dir-rij"><a href="${profielAdres(p.naam, basis)}" data-wijzer="Profiel">
     <span class="dir-plek">${String(plek).padStart(2, "0")}</span>
     ${plaatje(p.naam)}
     <span class="dir-naam"><b>${esc(p.naam)}</b><small>${esc(p.rol)}</small></span>

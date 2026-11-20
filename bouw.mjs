@@ -17,6 +17,8 @@ const SRC = path.join(hier, "src");
 const DIST = path.join(hier, "dist");
 const ADRES = (process.env.URL || "https://wairthy.com").replace(/\/$/, "");
 
+const ZEGEL = '<svg class="zegel" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="currentColor"/><path d="M6 8.5l3.5 9 3.5-7.5 3.5 7.5 3.5-9" fill="none" stroke="var(--zegel-inkt,#fff)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+const LOEP = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 // De delen van de site die ook in de voorbeeldomgeving bestaan.
 const IN_VOORBEELD = ["", "oplossingen", "winnaars", "directory", "collecties", "jury"];
@@ -50,64 +52,23 @@ ${index && !voorbeeld ? `<link rel="canonical" href="${canoniek}">` : '<meta nam
 <meta property="og:type" content="website">
 <meta property="og:image" content="${ADRES}/og.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script src="/js/vroeg.js"></script>
+<link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin>
+<script src="/js/thema.js"></script>
 <link rel="stylesheet" href="/css/stijl.css">
 ${script ? `<script type="module" src="/js/${script}"></script>` : ""}
 </head>
 <body class="${lijf}">
 <a class="skip" href="#inhoud">Naar de inhoud</a>
 ${voorbeeld ? `<p class="voorbeeldband"><b>Voorbeeldomgeving.</b> Alle oplossingen, juryleden en cijfers op deze pagina's zijn verzonnen, om te laten zien hoe het platform werkt. <a href="/">Naar de echte site</a></p>` : ""}
-<header class="kop">
-  <div class="kop-binnen">
-    <a class="merk" href="${basis}/" aria-label="Wairthy, naar de startpagina">Wairthy<sup>(2026)</sup></a>
-    <nav class="kop-nav" aria-label="Hoofdmenu">
-      <button class="kop-link" type="button" data-ontdek aria-expanded="false" aria-controls="ontdek">Ontdek<span aria-hidden="true"></span></button>
-      <a class="kop-link kop-breed" href="${b("directory")}/directory/"${huidig("directory")}>Directory</a>
-      <a class="kop-link kop-breed" href="${b("jury")}/jury/"${huidig("jury")}>Jury</a>
-      <a class="kop-link kop-breed" href="/werkwijze/"${huidig("werkwijze")}>Werkwijze</a>
-    </nav>
-    <div class="kop-rechts">
-      <button class="kop-link" type="button" data-zoek>Zoek<kbd>/</kbd></button>
-      <a class="kop-link kop-breed" href="/account/" data-account${huidig("account")}>Inloggen</a>
-      <a class="knop knop-zegel knop-klein" href="/inzenden/">Inzenden</a>
-    </div>
-  </div>
-  <div class="ontdek" id="ontdek" hidden>
-    <div class="ontdek-binnen">
-      <div class="ontdek-kolom">
-        <h2>Awards</h2>
-        <ul class="ontdek-groot">
-          <li><a href="${basis}/oplossingen/">Alle oplossingen<sup>(${ontdek.aantal})</sup></a></li>
-          <li><a href="${basis}/oplossingen/?stand=wairthy">Wairthy</a></li>
-          <li><a href="${basis}/oplossingen/?stand=eervol">Eervolle vermelding</a></li>
-          <li><a href="${basis}/oplossingen/?stand=genomineerd">Genomineerd</a></li>
-          <li><a href="${basis}/winnaars/">Winnaars per maand</a></li>
-        </ul>
-      </div>
-      <div class="ontdek-kolom">
-        <h2>Per sector</h2>
-        <ul>${ontdek.sectoren.map(([naam, n]) => `<li><a href="${basis}/oplossingen/?sector=${encodeURIComponent(naam)}">${esc(naam)}<sup>(${n})</sup></a></li>`).join("")}</ul>
-      </div>
-      <div class="ontdek-kolom">
-        <h2>Per soort</h2>
-        <ul>${ontdek.types.map(([naam, n]) => `<li><a href="${basis}/oplossingen/?type=${encodeURIComponent(naam)}">${esc(naam)}<sup>(${n})</sup></a></li>`).join("")}</ul>
-        <h2>Collecties</h2>
-        <ul>${ontdek.collecties.map((c) => `<li><a href="${basis}/collecties/${c.id}/">${esc(c.naam)}<sup>(${c.oplossingen.length})</sup></a></li>`).join("")}</ul>
-      </div>
-      <div class="ontdek-kolom">
-        <h2>Meer</h2>
-        <ul>
-          <li><a href="${b("directory")}/directory/">Directory</a></li>
-          <li><a href="${b("jury")}/jury/">Jury</a></li>
-          <li><a href="/werkwijze/">Werkwijze</a></li>
-          <li><a href="/over/">Over Wairthy</a></li>
-          <li><a href="/account/">Inloggen</a></li>
-        </ul>
-      </div>
-    </div>
+<header class="top">
+  <a class="merk" href="${basis}/" aria-label="Wairthy, naar de startpagina">${ZEGEL}<span>Wairthy</span></a>
+  <p class="top-leus">De award voor AI die werkt</p>
+  <div class="top-rechts">
+    <button class="thema-knop" type="button" data-thema-knop aria-label="Wissel tussen licht en donker"><i aria-hidden="true"></i></button>
+    <a class="top-login" href="/account/" data-account${huidig("account")}>Inloggen</a>
   </div>
 </header>
 <main id="inhoud">
@@ -116,7 +77,7 @@ ${inhoud.trim()}
 <footer class="voet">
   <div class="breed">
     <div class="voet-kolommen">
-      <p class="voet-leus">AI die werkt, beoordeeld door vakmensen.</p>
+      <p class="voet-leus">AI die <em>werkt</em>, beoordeeld door vakmensen.</p>
       <div>
         <h2>Ontdek</h2>
         <ul>
@@ -154,9 +115,55 @@ ${inhoud.trim()}
   </div>
 </footer>
 
+<nav class="dok" aria-label="Hoofdmenu">
+  <a class="dok-merk" href="${basis}/" aria-label="Start"${huidig("")}>${ZEGEL}</a>
+  <button class="dok-item" type="button" data-ontdek aria-expanded="false" aria-controls="ontdek">Ontdek</button>
+  <a class="dok-item dok-breed" href="${b("directory")}/directory/"${huidig("directory")}>Directory</a>
+  <a class="dok-item dok-breed" href="${b("jury")}/jury/"${huidig("jury")}>Jury</a>
+  <a class="dok-item dok-breed" href="/werkwijze/"${huidig("werkwijze")}>Werkwijze</a>
+  <button class="dok-item dok-zoek" type="button" data-zoek aria-label="Zoeken">${LOEP}<kbd>/</kbd></button>
+  <a class="dok-knop" href="/inzenden/">Inzenden</a>
+</nav>
+
+<div class="ontdek" id="ontdek" hidden>
+  <div class="ontdek-binnen">
+    <div class="ontdek-kolom">
+      <h2>Awards</h2>
+      <ul class="ontdek-groot">
+        <li><a href="${basis}/oplossingen/">Alle oplossingen <sup>${ontdek.aantal}</sup></a></li>
+        <li><a href="${basis}/oplossingen/?stand=wairthy">Wairthy</a></li>
+        <li><a href="${basis}/oplossingen/?stand=eervol">Eervolle vermelding</a></li>
+        <li><a href="${basis}/oplossingen/?stand=genomineerd">Genomineerd</a></li>
+        <li><a href="${basis}/winnaars/">Winnaars per maand</a></li>
+      </ul>
+    </div>
+    <div class="ontdek-kolom">
+      <h2>Per sector</h2>
+      <ul>${ontdek.sectoren.map(([naam, n]) => `<li><a href="${basis}/oplossingen/?sector=${encodeURIComponent(naam)}">${esc(naam)} <sup>${n}</sup></a></li>`).join("")}</ul>
+    </div>
+    <div class="ontdek-kolom">
+      <h2>Per soort</h2>
+      <ul>${ontdek.types.map(([naam, n]) => `<li><a href="${basis}/oplossingen/?type=${encodeURIComponent(naam)}">${esc(naam)} <sup>${n}</sup></a></li>`).join("")}</ul>
+      <h2>Collecties</h2>
+      <ul>${ontdek.collecties.map((c) => `<li><a href="${basis}/collecties/${c.id}/">${esc(c.naam)} <sup>${c.oplossingen.length}</sup></a></li>`).join("")}</ul>
+    </div>
+    <div class="ontdek-kolom ontdek-meer">
+      <h2>Meer</h2>
+      <ul>
+        <li><a href="${b("directory")}/directory/">Directory</a></li>
+        <li><a href="${b("jury")}/jury/">Jury</a></li>
+        <li><a href="/werkwijze/">Werkwijze</a></li>
+        <li><a href="/over/">Over Wairthy</a></li>
+        <li><a href="/account/">Inloggen</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <dialog class="zoek" id="zoek" aria-label="Zoeken">
-  <form method="dialog" class="zoek-kop"><input type="search" id="zoek-veld" placeholder="Zoek een oplossing, organisatie of maker" autocomplete="off" aria-controls="zoek-uit" aria-label="Zoeken"><button class="zoek-sluit" type="submit" aria-label="Sluit zoeken">(esc)</button></form>
+  <form method="dialog" class="zoek-kop">${LOEP}<input type="search" id="zoek-veld" placeholder="Zoek een oplossing, organisatie of maker" autocomplete="off" aria-controls="zoek-uit" aria-label="Zoeken"><button class="zoek-sluit" type="submit" aria-label="Sluit zoeken">esc</button></form>
   <div class="zoek-uit" id="zoek-uit" role="listbox" aria-label="Resultaten"></div>
+  <p class="zoek-voet"><span><kbd>↑</kbd><kbd>↓</kbd> kiezen</span><span><kbd>↵</kbd> openen</span><span><kbd>esc</kbd> sluiten</span></p>
 </dialog>
 <div class="wijzer" aria-hidden="true"></div>
 </body>
@@ -168,9 +175,9 @@ function kopieer(van, naar) {
   fs.cpSync(van, naar, { recursive: true });
 }
 
-// De omslag van een collectie: een strook kleine affiches naast elkaar.
+// De omslag van een collectie: drie affiches als waaier.
 export function waaier(lijst) {
-  return `<div class="strip" aria-hidden="true">${lijst.slice(0, 5).map((o) => `<span>${poster(o)}</span>`).join("")}</div>`;
+  return `<div class="waaier" aria-hidden="true">${lijst.slice(0, 3).map((o) => `<span>${poster(o)}</span>`).join("")}</div>`;
 }
 
 function bouwUitgave({ basis, voorbeeld, dataMap }) {
@@ -209,7 +216,7 @@ function bouwUitgave({ basis, voorbeeld, dataMap }) {
       pad: `collecties/${c.id}/index.html`,
       script: "statisch.js",
       actief: "collecties",
-      inhoud: `<section class="paginakop"><div class="breed"><p class="kruimel"><a href="${basis}/collecties/">Collecties</a></p><h1>${esc(c.naam)}<sup>(${c.oplossingen.length})</sup></h1><p>${esc(c.uitleg)}</p></div></section>
+      inhoud: `<section class="paginakop"><div class="breed"><p class="kruimel"><a href="${basis}/collecties/">Collecties</a></p><h1>${esc(c.naam)}<sup>${c.oplossingen.length}</sup></h1><p>${esc(c.uitleg)}</p></div></section>
 <section class="breed"><div class="raster">${c.oplossingen.map((o) => kaart(o, basis)).join("")}</div></section>`,
     });
   }

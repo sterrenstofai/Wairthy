@@ -5,8 +5,7 @@ Een platform dat AI-oplossingen toont die in Nederland echt in gebruik zijn, en 
 ## Wat er is
 
 - **Openbare site:** start met een carrousel, oplossingen (filters links, zoeken, raster en lijst), een vaste pagina per oplossing, winnaars, collecties, een directory met een profiel per organisatie en maker, jury, werkwijze, inzenden, over, contact, privacy en voorwaarden.
-- **Navigatie:** een ontdekmenu in de kop met awards, sectoren, soorten en collecties, en zoeken over de hele selectie met `/` of Cmd+K.
-- **Vormgeving:** vier letters met elk één taak (schreef in kapitalen voor titels, schreefloos voor leestekst, typemachine voor etiketten, handschrift voor een enkele kanttekening), rechte hoeken en haarlijnen. Alleen een licht thema.
+- **Navigatie:** een dok onderaan met het ontdekmenu, en zoeken over de hele selectie met `/` of Cmd+K. Licht en donker thema.
 - **Juryomgeving** (`/account/`): inloggen met een persoonlijke code, een wachtrij, beoordelen op vijf criteria met toelichting, en terugtrekken bij een belang.
 - **Beheer** (`/beheer/`): inzendingen lezen en publiceren, juryleden toevoegen en codes uitgeven, aanmeldingen en berichten afhandelen, een vermelding verbergen.
 - **Voorbeeldomgeving** (`/voorbeeld/`): dezelfde site met verzonnen oplossingen, juryleden en cijfers, om te laten zien hoe het eruitziet zodra de jury draait.
@@ -16,7 +15,7 @@ Een platform dat AI-oplossingen toont die in Nederland echt in gebruik zijn, en 
 - `src/`: opmaak, scripts, lettertypen en gegevens.
   - `src/data/oplossingen.json`: de selectie. Elk record heeft een eigen beschrijving en de bronnen waarop die steunt.
   - `src/js/score.js`: het beoordelingsmodel. Criteria, gewichten en drempels staan alleen hier.
-  - `src/js/poster.js`: de affiches. We tonen geen schermafbeeldingen van andermans werk; elke oplossing krijgt een lijntekening op een vlak in de kleur van haar sector, met het motief van haar soort.
+  - `src/js/poster.js`: de affiches. We tonen geen schermafbeeldingen van andermans werk; elke oplossing krijgt een tekening in de kleur van haar sector en met het motief van haar soort.
   - `src/js/indeling.js`: de collecties (vaste regels over de gegevens) en de directory.
   - `src/js/weergave.js`: de opmaak van kaarten en detailpagina's, gedeeld door het bouwscript en de browser.
 - `paginas.mjs`: de tekst van de vaste pagina's.
