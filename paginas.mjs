@@ -12,112 +12,108 @@ const honingpot = `<p class="verborgen" aria-hidden="true"><label>Laat dit veld 
 const criteriaBand = (g) => `
 <section class="band band-donker">
   <div class="breed">
-    <div class="blok-kop"><h2>Vijf criteria, één cijfer</h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p></div>
+    <div class="blok-kop"><h2>Vijf criteria, <em>één cijfer</em></h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p><a class="pijl" href="/werkwijze/">De volledige werkwijze</a></div>
     <ol class="criteria">
       ${g.CRITERIA.map((c) => `<li data-onthul><span class="gewicht">${c.gewicht}<small>%</small></span><h3>${esc(c.naam)}</h3><p>${esc(c.vraag)}</p></li>`).join("")}
     </ol>
-    <p class="band-voet"><a class="pijl" href="/werkwijze/">Lees de volledige werkwijze</a></p>
   </div>
 </section>`;
 
+const collectieKaart = (c, basis, g) => `<a class="collectie" href="${basis}/collecties/${c.id}/" data-wijzer="Open">${g.waaier(c.oplossingen)}<p class="meta">Collectie · ${c.oplossingen.length} oplossingen</p><h3>${esc(c.naam)}</h3><p>${esc(c.uitleg)}</p></a>`;
+
 const start = (g, basis) => `
 <h1 class="sr">Wairthy, de award voor AI die werkt</h1>
-<section class="held" id="held" aria-label="Uitgelicht"><div class="breed held-leeg"><p class="meta">De selectie wordt geladen.</p></div></section>
+<section class="held" id="held" aria-label="In de schijnwerper" aria-roledescription="carrousel"><div class="breed held-leeg"><p class="meta">De selectie wordt geladen.</p></div></section>
 
-<section class="leus">
-  <div class="breed">
-    <p>Wairthy is de Nederlandse award voor <em>AI-oplossingen die in de praktijk werken</em>. Een vakjury beoordeelt elke oplossing op vijf criteria, en alle cijfers zijn openbaar.</p>
-    <dl class="tellers">
-      <div><dd id="tel-oplossingen">${g.aantal}</dd><dt>oplossingen genomineerd</dt></div>
-      <div><dd id="tel-sectoren">&nbsp;</dd><dt>sectoren</dt></div>
-      <div><dd id="tel-winnaars">&nbsp;</dd><dt>onderscheidingen</dt></div>
-      <div><dd id="tel-jury">&nbsp;</dd><dt>juryleden</dt></div>
-    </dl>
-  </div>
+<div class="lint" id="lint" aria-hidden="true"></div>
+
+<section class="breed leus">
+  <p data-onthul>Wairthy is de Nederlandse award voor <em>AI die in de praktijk werkt</em>. Een vakjury beoordeelt elke oplossing op vijf criteria, en alle cijfers zijn openbaar.</p>
+  <dl class="tellers">
+    <div><dd id="tel-oplossingen" data-tel>${g.aantal}</dd><dt>oplossingen in de selectie</dt></div>
+    <div><dd id="tel-sectoren" data-tel>&nbsp;</dd><dt>sectoren</dt></div>
+    <div><dd id="tel-winnaars" data-tel>&nbsp;</dd><dt>onderscheidingen</dt></div>
+    <div><dd id="tel-jury" data-tel>&nbsp;</dd><dt>juryleden</dt></div>
+  </dl>
 </section>
 
 <section class="breed blok">
-  <div class="blok-kop"><h2>Genomineerd</h2><a class="pijl" href="${basis}/oplossingen/">Alle oplossingen</a></div>
-  <div class="raster raster-4" id="genomineerd"></div>
+  <div class="blok-kop"><h2>Genomineerd<sup id="tel-open"></sup></h2><p>In de selectie, in afwachting van de jury.</p><a class="pijl" href="${basis}/oplossingen/?stand=genomineerd">Alle genomineerden</a></div>
+  <div class="raster" id="genomineerd"></div>
 </section>
 
 <section class="breed blok" id="winnaars-blok">
-  <div class="blok-kop"><h2>Winnaars</h2><a class="pijl" href="${basis}/winnaars/">Alle winnaars</a></div>
+  <div class="blok-kop"><h2>Winnaars<sup id="tel-win"></sup></h2><p>Oplossingen die van de jury een onderscheiding kregen.</p><a class="pijl" href="${basis}/winnaars/">Alle winnaars</a></div>
   <div id="winnaars"></div>
+</section>
+
+<section class="blok">
+  <div class="breed blok-kop"><h2>Collecties<sup>${g.collecties.length}</sup></h2><p>De selectie, langs een andere lijn doorgesneden.</p><a class="pijl" href="${basis}/collecties/">Alle collecties</a></div>
+  <div class="strook" tabindex="0" aria-label="Collecties">${g.collecties.map((c) => collectieKaart(c, basis, g)).join("")}</div>
+</section>
+
+<section class="breed blok">
+  <div class="blok-kop"><h2>Directory<sup>${g.profielen.length}</sup></h2><p>Wie de oplossingen gebruikt en wie ze bouwt.</p><a class="pijl" href="${basis}/directory/">De hele directory</a></div>
+  <div id="directory-kort"></div>
 </section>
 
 ${criteriaBand(g)}
 
-<section class="breed blok">
-  <div class="blok-kop"><h2>Ranglijst</h2><a class="pijl" href="${basis}/ranglijst/">De volledige ranglijst</a></div>
-  <div class="raster raster-4" id="rang"></div>
-</section>
-
-<section class="breed blok">
-  <div class="blok-kop"><h2>Per sector</h2></div>
-  <ul class="sectoren" id="sectoren"></ul>
-</section>
-
 <section class="breed blok oproep">
-  <div class="oproep-donker" data-onthul>
+  <a class="oproep-vlak oproep-zegel" href="/inzenden/" data-wijzer="Inzenden" data-onthul>
     <p class="meta">Voor makers en opdrachtgevers</p>
     <h2>Zend je oplossing in</h2>
     <p>Heb je een AI-oplossing gebouwd of in gebruik genomen die laat zien hoe het hoort? Laat de jury ernaar kijken. Inzenden is gratis.</p>
-    <a class="knop knop-zegel" href="/inzenden/">Naar het formulier</a>
-  </div>
-  <div class="oproep-licht" data-onthul>
+    <span class="knop">Naar het formulier</span>
+  </a>
+  <a class="oproep-vlak oproep-licht" href="/jury/#aanmelden" data-wijzer="Aanmelden" data-onthul>
     <p class="meta">Voor vakmensen</p>
     <h2>Word jurylid</h2>
     <p>We zoeken mensen die zelf AI-oplossingen bouwen, invoeren of toetsen, en die hun oordeel onder eigen naam willen geven.</p>
-    <a class="knop knop-lijn" href="/jury/#aanmelden">Meld je aan</a>
-  </div>
+    <span class="knop knop-lijn">Meld je aan</span>
+  </a>
 </section>`;
 
 const overzicht = (g) => `
 <section class="paginakop">
   <div class="breed">
-    <h1>Oplossingen</h1>
+    <h1>Oplossingen<sup id="teller-kop">${g.aantal}</sup></h1>
     <p>Alle AI-oplossingen in de selectie. Elke beschrijving is door de redactie geschreven op basis van bronnen die bij de oplossing staan.</p>
   </div>
 </section>
-<section class="breed">
-  <form class="filters" id="filters" role="search" aria-label="Oplossingen filteren">
-    <div class="tabs" role="radiogroup" aria-label="Oordeel">
-      <label><input type="radio" name="stand" value="" checked><span>Alles</span></label>
-      <label><input type="radio" name="stand" value="wairthy"><span>Wairthy</span></label>
-      <label><input type="radio" name="stand" value="eervol"><span>Eervolle vermelding</span></label>
-      <label><input type="radio" name="stand" value="beoordeeld"><span>Beoordeeld</span></label>
-      <label><input type="radio" name="stand" value="genomineerd"><span>Genomineerd</span></label>
-    </div>
-    <div class="filterrij">
-      <label class="zoekveld"><span class="sr">Zoeken</span><input type="search" name="zoek" placeholder="Zoek op naam, organisatie of maker" autocomplete="off"></label>
-      <label><span class="sr">Sector</span><select name="sector"><option value="">Alle sectoren</option></select></label>
-      <label><span class="sr">Soort</span><select name="type"><option value="">Alle soorten</option></select></label>
-      <label><span class="sr">Status</span><select name="status"><option value="">Elke status</option></select></label>
-      <label><span class="sr">Bewijs</span><select name="bewijs"><option value="">Elk bewijsniveau</option>${g.BEWIJS.slice()
-        .reverse()
-        .map((b) => `<option value="${b.niveau}">${esc(b.naam)}</option>`)
-        .join("")}</select></label>
-      <label><span class="sr">Volgorde</span><select name="volgorde">
-        <option value="nieuw">Nieuwste eerst</option>
-        <option value="cijfer">Hoogste cijfer</option>
-        <option value="naam">Naam</option>
-        <option value="organisatie">Organisatie</option>
-      </select></label>
+<section class="breed lijstpagina">
+  <details class="filterpaneel" id="filterpaneel" open>
+    <summary>Filters <b id="filter-aantal"></b></summary>
+    <form class="filters" id="filters" role="search" aria-label="Oplossingen filteren">
+      <label class="zoekveld"><span class="sr">Zoeken</span><input type="search" name="zoek" placeholder="Zoek in de selectie" autocomplete="off"></label>
+      <fieldset data-groep="stand"><legend>Awards</legend></fieldset>
+      <fieldset data-groep="sector"><legend>Sector</legend></fieldset>
+      <fieldset data-groep="type"><legend>Soort</legend></fieldset>
+      <fieldset data-groep="status"><legend>Status</legend></fieldset>
+      <fieldset data-groep="bewijs"><legend>Bewijs</legend></fieldset>
+      <fieldset data-groep="collectie"><legend>Collectie</legend></fieldset>
       <input type="hidden" name="maker" value="">
-    </div>
-  </form>
-  <div class="filterbalk">
-    <p class="meta" id="teller" aria-live="polite">&nbsp;</p>
-    <div class="filterbalk-rechts">
-      <button type="reset" form="filters" class="tekstknop" id="wis" hidden>Wis de filters</button>
-      <div class="weergave" role="group" aria-label="Weergave">
-        <button type="button" data-weergave="raster" aria-pressed="true" title="Raster"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9z"/></svg><span class="sr">Raster</span></button>
-        <button type="button" data-weergave="lijst" aria-pressed="false" title="Lijst"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14v2.5H1zM1 6.75h14v2.5H1zM1 11.5h14V14H1z"/></svg><span class="sr">Lijst</span></button>
+    </form>
+  </details>
+  <div class="lijst-hoofd">
+    <div class="filterbalk">
+      <div class="chips" id="chips" aria-live="polite"></div>
+      <div class="filterbalk-rechts">
+        <label class="sorteer"><span class="sr">Volgorde</span><select name="volgorde" form="filters">
+          <option value="nieuw">Nieuwste eerst</option>
+          <option value="cijfer">Hoogste cijfer</option>
+          <option value="naam">Naam</option>
+          <option value="organisatie">Organisatie</option>
+        </select></label>
+        <div class="weergave" role="group" aria-label="Weergave">
+          <button type="button" data-weergave="raster" aria-pressed="true" title="Raster"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9z"/></svg><span class="sr">Raster</span></button>
+          <button type="button" data-weergave="lijst" aria-pressed="false" title="Lijst"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14v2.5H1zM1 6.75h14v2.5H1zM1 11.5h14V14H1z"/></svg><span class="sr">Lijst</span></button>
+        </div>
       </div>
     </div>
+    <div class="raster" id="raster"></div>
+    <div class="meer" id="meer" hidden><button class="knop knop-lijn" type="button">Toon meer</button></div>
   </div>
-  <div class="raster raster-4" id="raster"></div>
 </section>`;
 
 const winnaars = () => `
@@ -129,20 +125,33 @@ const winnaars = () => `
 </section>
 <section class="breed"><div id="winnaars-lijst"></div></section>`;
 
-const ranglijst = () => `
+const directoryPagina = (g) => `
 <section class="paginakop">
   <div class="breed">
-    <h1>Ranglijst</h1>
-    <p>Wie staat het vaakst in de selectie, en wie haalt de meeste onderscheidingen? Het predicaat Wairthy telt eerst, dan eervolle vermeldingen, dan het aantal genomineerde oplossingen.</p>
+    <h1>Directory<sup>${g.profielen.length}</sup></h1>
+    <p>Iedereen die een oplossing in de selectie gebruikt of heeft gebouwd. De volgorde volgt de onderscheidingen: eerst Wairthy, dan eervolle vermeldingen, dan het aantal oplossingen.</p>
   </div>
 </section>
 <section class="breed">
-  <div class="tabs tabs-los" role="tablist" aria-label="Soort ranglijst">
-    <button type="button" role="tab" aria-selected="true" data-rang="organisaties">Organisaties</button>
-    <button type="button" role="tab" aria-selected="false" data-rang="makers">Makers en leveranciers</button>
+  <div class="filterbalk">
+    <div class="tabs" role="tablist" aria-label="Soort profiel">
+      <button type="button" role="tab" aria-selected="true" data-rol="">Alle</button>
+      <button type="button" role="tab" aria-selected="false" data-rol="Organisatie">Organisaties</button>
+      <button type="button" role="tab" aria-selected="false" data-rol="Maker">Makers en leveranciers</button>
+    </div>
+    <label class="zoekveld zoekveld-smal"><span class="sr">Zoek in de directory</span><input type="search" id="directory-zoek" placeholder="Zoek een naam" autocomplete="off"></label>
   </div>
-  <div id="rang-lijst"></div>
+  <div id="directory-lijst"></div>
 </section>`;
+
+const collectiesPagina = (g, basis) => `
+<section class="paginakop">
+  <div class="breed">
+    <h1>Collecties<sup>${g.collecties.length}</sup></h1>
+    <p>Elke collectie is een vaste regel over de selectie: wie eraan voldoet, staat erin. Zo zie je in één oogopslag wat er binnen een soort of een sector gebeurt.</p>
+  </div>
+</section>
+<section class="breed"><div class="collecties-raster">${g.collecties.map((c) => collectieKaart(c, basis, g)).join("")}</div></section>`;
 
 const jury = () => `
 <section class="band band-donker paginakop-donker">
@@ -547,7 +556,8 @@ export const PAGINAS = [
   { pad: "oplossingen/index.html", titel: "Oplossingen · Wairthy", beschrijving: "Alle AI-oplossingen in de selectie van Wairthy, te filteren op oordeel, sector, soort en bewijs.", script: "overzicht.js", actief: "oplossingen", inVoorbeeld: true, inhoud: overzicht },
   { pad: "oplossingen/bekijk/index.html", titel: "Oplossing · Wairthy", beschrijving: "Een AI-oplossing in de selectie van Wairthy.", script: "detail.js", actief: "oplossingen", lijf: "pagina-detail", index: false, inhoud: bekijk },
   { pad: "winnaars/index.html", titel: "Winnaars · Wairthy", beschrijving: "De AI-oplossingen die van de jury het predicaat Wairthy of een eervolle vermelding kregen.", script: "winnaars.js", actief: "winnaars", inVoorbeeld: true, inhoud: winnaars },
-  { pad: "ranglijst/index.html", titel: "Ranglijst · Wairthy", beschrijving: "Welke organisaties en makers de meeste onderscheidingen en nominaties hebben.", script: "ranglijst.js", actief: "ranglijst", inVoorbeeld: true, inhoud: ranglijst },
+  { pad: "directory/index.html", titel: "Directory · Wairthy", beschrijving: "De organisaties en makers achter de AI-oplossingen in de selectie, met hun onderscheidingen.", script: "directory.js", actief: "directory", inVoorbeeld: true, inhoud: directoryPagina },
+  { pad: "collecties/index.html", titel: "Collecties · Wairthy", beschrijving: "De selectie van Wairthy in collecties: per soort, per sector en op bewijs.", script: "statisch.js", actief: "collecties", inVoorbeeld: true, inhoud: collectiesPagina },
   { pad: "jury/index.html", titel: "Jury · Wairthy", beschrijving: "Wie de AI-oplossingen beoordeelt en hoe je jurylid wordt.", script: "jury.js", actief: "jury", inVoorbeeld: true, inhoud: jury },
   { pad: "werkwijze/index.html", titel: "Werkwijze · Wairthy", beschrijving: "Hoe een oplossing in de selectie komt, hoe de jury beoordeelt en wat een onderscheiding betekent.", script: "werkwijze.js", actief: "werkwijze", inhoud: werkwijze },
   { pad: "inzenden/index.html", titel: "Inzenden · Wairthy", beschrijving: "Zend een AI-oplossing in of vul een bestaande vermelding aan.", script: "inzenden.js", inhoud: inzenden },

@@ -2,6 +2,7 @@
 // zodat het bouwscript en de browser precies dezelfde opmaak maken.
 import { poster, kleuren } from "./poster.js";
 import { CRITERIA, MIN_JURYLEDEN, bewijs, toonCijfer } from "./score.js";
+import { slug } from "./indeling.js";
 
 export function esc(tekst) {
   return String(tekst ?? "").replace(/[&<>"']/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[t]);
@@ -26,7 +27,7 @@ export function inktOp(hex) {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.32 ? "#121110" : "#ffffff";
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.32 ? "#0c0c0b" : "#ffffff";
 }
 
 export function vlakStijl(o) {
@@ -41,8 +42,20 @@ export function lengteKlas(naam) {
 }
 
 export function initialen(naam) {
-  const delen = String(naam).trim().split(/\s+/).filter((d) => /^[\p{L}]/u.test(d));
-  return ((delen[0]?.[0] ?? "") + (delen.length > 1 ? delen[delen.length - 1][0] : "")).toUpperCase();
+  const delen = String(naam).trim().split(/\s+/).filter((d) => /^[\p{L}\p{N}]/u.test(d));
+  return ((delen[0]?.[0] ?? "") + (delen.length > 1 ? delen[delen.length - 1][0] : (delen[0]?.[1] ?? ""))).toUpperCase();
+}
+
+// Een rond naamplaatje met initialen, in een kleur die vast bij de naam hoort.
+const TINTEN = ["#f6c445", "#8fe0b4", "#f7b3ab", "#a9c4f5", "#c7b8f5", "#c6f06a", "#8fd6e8", "#e3b5d6", "#ffb38a"];
+export function plaatje(naam, klas = "") {
+  let h = 0;
+  for (const t of String(naam)) h = (h * 31 + t.charCodeAt(0)) >>> 0;
+  return `<span class="plaatje ${klas}" style="--tint:${TINTEN[h % TINTEN.length]}" aria-hidden="true">${esc(initialen(naam))}</span>`;
+}
+
+export function profielAdres(naam, basis = "") {
+  return `${basis}/directory/${slug(naam)}/`;
 }
 
 // Het etiket dat zegt waar een oplossing staat in het traject.
@@ -62,16 +75,33 @@ export function bewijsmeter(o) {
   return `<span class="bewijs" title="${esc(b.uitleg)}"><span class="bewijs-stippen" aria-hidden="true">${stippen}</span>${esc(b.naam)}</span>`;
 }
 
+// De vingerafdruk: de vijf criteria als vijfhoek. Zonder cijfers alleen het raster.
+export function vingerafdruk(perCriterium, klas = "") {
+  const punt = (i, straal) => {
+    const hoek = (Math.PI * 2 * i) / CRITERIA.length - Math.PI / 2;
+    return [50 + Math.cos(hoek) * straal, 50 + Math.sin(hoek) * straal];
+  };
+  const veelhoek = (straal) => CRITERIA.map((_, i) => punt(i, straal).map((n) => n.toFixed(1)).join(",")).join(" ");
+  const ringen = [14, 28, 42].map((s) => `<polygon points="${veelhoek(s)}" class="va-ring"/>`).join("");
+  const assen = CRITERIA.map((_, i) => `<line x1="50" y1="50" x2="${punt(i, 42)[0].toFixed(1)}" y2="${punt(i, 42)[1].toFixed(1)}" class="va-ring"/>`).join("");
+  const vorm = perCriterium
+    ? `<polygon class="va-vorm" points="${CRITERIA.map((c, i) => punt(i, (perCriterium[c.id] / 10) * 42).map((n) => n.toFixed(1)).join(",")).join(" ")}"/>${CRITERIA.map((c, i) => {
+        const [x, y] = punt(i, (perCriterium[c.id] / 10) * 42);
+        return `<circle class="va-punt" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.6"/>`;
+      }).join("")}`
+    : "";
+  return `<svg class="vingerafdruk ${klas}" viewBox="0 0 100 100" role="img" aria-label="${perCriterium ? "Cijfers per criterium als vijfhoek" : "Nog geen cijfers"}">${ringen}${assen}${vorm}</svg>`;
+}
+
 export function kaart(o, basis = "") {
   const d = o.oordeel;
   const cijfer = d?.compleet ? `<span class="kaart-cijfer kaart-cijfer-${d.onderscheiding?.id ?? "beoordeeld"}" aria-label="Eindcijfer ${toonCijfer(d.eindcijfer)}">${toonCijfer(d.eindcijfer)}</span>` : "";
-  return `<article class="kaart">
-    <a class="kaart-link" href="${esc(adresVan(o, basis))}">
-      <div class="kaart-beeld">${poster(o)}${cijfer}</div>
+  return `<article class="kaart" data-id="${esc(o.id)}">
+    <a class="kaart-link" href="${esc(adresVan(o, basis))}" data-wijzer="Bekijk">
+      <div class="kaart-beeld">${poster(o)}${cijfer}<span class="kaart-soort">${esc(o.type)}</span></div>
       <div class="kaart-lijf">
-        <h3>${esc(o.naam)}</h3>
-        <p class="kaart-org">${esc(o.organisatie)}</p>
-        <div class="kaart-voet">${etiket(o)}<span class="meta">${esc(o.sector)}</span></div>
+        <div class="kaart-kop"><h3>${esc(o.naam)}</h3>${etiket(o)}</div>
+        <p class="kaart-org">${plaatje(o.organisatie, "plaatje-klein")}<span>${esc(o.organisatie)}</span><span class="kaart-sector">${esc(o.sector)}</span></p>
       </div>
     </a>
   </article>`;
@@ -92,45 +122,46 @@ const HERKOMST = {
   leverancier: "Cijfer van de leverancier",
 };
 
-// Het jurypaneel zonder cijfers: de vijf criteria met een lege plek.
-export function juryLeeg(o) {
+// Het scoreblok: eindcijfer, de vijf criteria en de vingerafdruk. Zonder
+// cijfers dezelfde opbouw, met lege plekken en de reden erbij.
+export function scoreHTML(o, jury = []) {
   const d = o.oordeel;
-  const waarom =
-    d?.aantal > 0
-      ? `${d.aantal} van de minimaal ${MIN_JURYLEDEN} juryleden hebben hun cijfers gegeven. Het eindcijfer volgt zodra de beoordeling compleet is.`
+  const compleet = Boolean(d?.compleet);
+  const waarom = compleet
+    ? `Gemiddelde van ${d.aantal} juryleden`
+    : d?.aantal > 0
+      ? `${d.aantal} van de minimaal ${MIN_JURYLEDEN} juryleden hebben beoordeeld. Het eindcijfer volgt zodra de beoordeling compleet is.`
       : o.herkomst === "inzending"
         ? "Deze inzending wacht op beoordeling door de jury."
         : "Door de redactie genomineerd op basis van openbare bronnen. De jury heeft deze oplossing nog niet beoordeeld.";
-  return `<div class="jury-kop"><h2>Oordeel van de jury</h2><span class="jury-eind jury-eind-leeg" aria-label="Nog geen eindcijfer">–</span></div>
-    <p class="jury-waarom">${esc(waarom)}</p>
-    <ul class="jury-criteria">${CRITERIA.map((c) => `<li><span>${esc(c.naam)}<small>${c.gewicht}%</small></span><b class="leeg">–</b></li>`).join("")}</ul>`;
-}
-
-export function juryVol(o, jury) {
-  const d = o.oordeel;
-  const namen = new Map(jury.map((j) => [j.id, j]));
-  const rijen = d.stemmen
-    .slice()
-    .sort((a, b) => b.cijfer - a.cijfer)
-    .map((s) => {
-      const lid = namen.get(s.jurylid);
-      const naam = lid?.naam ?? "Jurylid";
-      return `<li class="stem">
-        <span class="avatar" aria-hidden="true">${esc(initialen(naam))}</span>
-        <span class="stem-naam">${esc(naam)}${lid?.functie ? `<small>${esc(lid.functie)}</small>` : ""}</span>
-        <span class="stem-cijfers">${CRITERIA.map((c) => `<i title="${esc(c.naam)}">${s.scores[c.id]}</i>`).join("")}</span>
-        <b>${toonCijfer(s.cijfer)}</b>
-        ${s.toelichting ? `<p>${esc(s.toelichting)}</p>` : ""}
-      </li>`;
-    })
-    .join("");
-  return `<div class="jury-kop"><h2>Oordeel van de jury</h2><span class="jury-eind jury-eind-${d.onderscheiding?.id ?? "beoordeeld"}">${toonCijfer(d.eindcijfer)}</span></div>
-    <p class="jury-waarom"><b>${esc(d.onderscheiding?.naam ?? "Beoordeeld")}</b> · gemiddelde van ${d.aantal} juryleden</p>
-    <ul class="jury-criteria">${CRITERIA.map(
-      (c) => `<li><span>${esc(c.naam)}<small>${c.gewicht}%</small></span><span class="balk" aria-hidden="true"><i style="width:${d.perCriterium[c.id] * 10}%"></i></span><b>${toonCijfer(d.perCriterium[c.id])}</b></li>`
-    ).join("")}</ul>
-    <div class="stem-kop"><span>Per jurylid</span><span class="stem-cijfers" aria-hidden="true">${CRITERIA.map((c) => `<i title="${esc(c.naam)}">${esc(c.naam.slice(0, 3))}</i>`).join("")}</span><span>Cijfer</span></div>
-    <ul class="stemmen">${rijen}</ul>`;
+  const criteria = CRITERIA.map((c) => {
+    const cijfer = compleet ? d.perCriterium[c.id] : null;
+    return `<li><span class="score-naam">${esc(c.naam)}</span><span class="score-gewicht">${c.gewicht}%</span><span class="balk" aria-hidden="true"><i style="width:${cijfer ? cijfer * 10 : 0}%"></i></span><b>${cijfer ? toonCijfer(cijfer) : "–"}</b></li>`;
+  }).join("");
+  let stemmen = "";
+  if (compleet) {
+    const namen = new Map(jury.map((j) => [j.id, j]));
+    const rijen = d.stemmen
+      .slice()
+      .sort((a, b) => b.cijfer - a.cijfer)
+      .map((s) => {
+        const lid = namen.get(s.jurylid);
+        const naam = lid?.naam ?? "Jurylid";
+        return `<tr><th scope="row">${plaatje(naam)}<span><b>${esc(naam)}</b>${lid ? `<small>${esc([lid.functie, lid.organisatie].filter(Boolean).join(", "))}</small>` : ""}</span></th>${CRITERIA.map((c) => `<td data-kop="${esc(c.naam)}">${s.scores[c.id]}</td>`).join("")}<td class="stem-totaal">${toonCijfer(s.cijfer)}</td></tr>${s.toelichting ? `<tr class="stem-toelichting"><td colspan="${CRITERIA.length + 2}">${esc(s.toelichting)}</td></tr>` : ""}`;
+      })
+      .join("");
+    stemmen = `<div class="stemmen-rol"><table class="stemmen"><thead><tr><th scope="col">Jury</th>${CRITERIA.map((c) => `<th scope="col">${esc(c.naam)}</th>`).join("")}<th scope="col">Cijfer</th></tr></thead><tbody>${rijen}</tbody></table></div>`;
+  }
+  const soort = compleet ? (d.onderscheiding?.id ?? "beoordeeld") : "leeg";
+  return `<div class="score score-${soort}">
+    <div class="score-eind">
+      <p class="meta">Oordeel van de jury</p>
+      <p class="score-cijfer">${compleet ? toonCijfer(d.eindcijfer) : "–"}<small>/10</small></p>
+      <p class="score-uitleg">${compleet ? `<b>${esc(d.onderscheiding?.naam ?? "Beoordeeld")}</b> · ` : ""}${esc(waarom)}</p>
+    </div>
+    <ul class="score-criteria">${criteria}</ul>
+    <div class="score-afdruk">${vingerafdruk(compleet ? d.perCriterium : null)}</div>
+  </div>${stemmen}`;
 }
 
 export function detailHTML(o, basis = "") {
@@ -141,57 +172,50 @@ export function detailHTML(o, basis = "") {
       return `<li><span class="bron-nr">${String(i + 1).padStart(2, "0")}</span><span>${titel}<small>${esc([b.uitgever, datumTekst(b.datum)].filter(Boolean).join(" · "))}</small></span></li>`;
     })
     .join("");
-  const feiten = [
-    ["Organisatie", o.organisatie],
-    ["Sector", o.sector],
-    ["Soort", o.type],
-    ["Status", o.sinds ? `${o.status}, sinds ${o.sinds}` : o.status],
-    ["Gebouwd met", (o.gebouwdMet ?? []).join(", ")],
-    ["Genomineerd", `${datumTekst(o.toegevoegd)}${o.herkomst === "inzending" ? ", ingezonden" : ", door de redactie"}`],
-  ]
-    .filter(([, w]) => w)
-    .map(([n, w]) => `<div><dt>${n}</dt><dd>${esc(w)}</dd></div>`)
-    .join("");
   const eersteBron = veiligAdres(o.bronnen?.[0]?.url);
+  const makers = (o.gebouwdMet ?? []).map((m) => `<a class="naamlink" href="${profielAdres(m, basis)}">${plaatje(m, "plaatje-klein")}${esc(m)}</a>`).join("");
 
-  return `<header class="detail-held" style="${vlakStijl(o)}">
-    <div class="breed">
-      <p class="kruimel"><a href="${basis}/oplossingen/">Oplossingen</a><span aria-hidden="true">/</span><a href="${basis}/oplossingen/?sector=${encodeURIComponent(o.sector)}">${esc(o.sector)}</a></p>
-      <h1 class="${lengteKlas(o.naam)}">${esc(o.naam)}</h1>
-      <p class="detail-org">${esc(o.organisatie)}</p>
+  return `<header class="detail-kop breed">
+    <p class="kruimel"><a href="${basis}/oplossingen/">Oplossingen</a><span aria-hidden="true">/</span><a href="${basis}/oplossingen/?sector=${encodeURIComponent(o.sector)}">${esc(o.sector)}</a></p>
+    <h1 class="${lengteKlas(o.naam)}">${esc(o.naam)}</h1>
+    <div class="detail-regel">
+      <p class="detail-credits"><span class="meta">Van</span><a class="naamlink" href="${profielAdres(o.organisatie, basis)}">${plaatje(o.organisatie, "plaatje-klein")}${esc(o.organisatie)}</a>${makers ? `<span class="meta">Gebouwd met</span>${makers}` : ""}</p>
+      <p class="detail-acties"><span data-etiket>${etiket(o)}</span>${eersteBron ? `<a class="knop" href="${esc(eersteBron)}" rel="noopener nofollow">Lees de bron <span aria-hidden="true">↗</span></a>` : ""}<button class="knop knop-lijn" type="button" data-deel>Kopieer de link</button></p>
     </div>
   </header>
-  <div class="breed podium">
-    <div class="podium-beeld">
-      ${poster(o)}
-      <div class="podium-balk">
-        <span data-etiket>${etiket(o)}</span>
-        <span class="podium-feit">${esc(o.type)}</span>
-        <span class="podium-feit">${esc(o.status)}</span>
-        ${eersteBron ? `<a class="knop knop-klein" href="${esc(eersteBron)}" rel="noopener nofollow">Lees de bron</a>` : ""}
-      </div>
-    </div>
-    <aside class="jurypaneel" id="jurypaneel" aria-live="polite">${juryLeeg(o)}</aside>
-  </div>
+  <div class="breed"><div class="podium" style="${vlakStijl(o)}">${poster(o)}</div></div>
+  <nav class="breed anker" aria-label="Op deze pagina"><a href="#oordeel">Oordeel</a><a href="#over">Over</a><a href="#resultaat">Resultaat</a><a href="#bronnen">Bronnen</a></nav>
+  <section class="breed detail-deel" id="oordeel"><h2 class="sr">Oordeel van de jury</h2><div id="jurypaneel" aria-live="polite">${scoreHTML(o)}</div></section>
   <div class="breed detail-lijf">
     <div class="detail-tekst">
-      <p class="intro">${esc(o.kort)}</p>
-      <p>${esc(o.beschrijving)}</p>
-      ${o.opvallend ? `<h2>Waarom dit opvalt</h2><p>${esc(o.opvallend)}</p>` : ""}
-      <h2>Resultaat</h2>
-      ${
-        o.resultaat
-          ? `<blockquote class="resultaat"><p>${esc(o.resultaat.tekst)}</p><footer>${esc(HERKOMST[o.resultaat.herkomst] ?? "")}</footer></blockquote>`
-          : `<p class="gedempt">In de bronnen staat geen gemeten resultaat.</p>`
-      }
-      <p class="bewijs-regel">${bewijsmeter(o)}<a href="${basis}/werkwijze/#bewijs">Wat betekent dit?</a></p>
-      <h2>Bronnen</h2>
-      <ol class="bronnen">${bronnen}</ol>
-      ${o.gecontroleerd ? `<p class="voetnoot">Bronnen gelezen op ${esc(datumTekst(o.gecontroleerd))}. De beschrijving is van de redactie.</p>` : ""}
+      <section id="over">
+        <p class="intro">${esc(o.kort)}</p>
+        <p>${esc(o.beschrijving)}</p>
+        ${o.opvallend ? `<h2>Waarom dit opvalt</h2><p>${esc(o.opvallend)}</p>` : ""}
+      </section>
+      <section id="resultaat">
+        <h2>Resultaat</h2>
+        ${
+          o.resultaat
+            ? `<blockquote class="resultaat"><p>${esc(o.resultaat.tekst)}</p><footer>${esc(HERKOMST[o.resultaat.herkomst] ?? "")}</footer></blockquote>`
+            : `<p class="gedempt">In de bronnen staat geen gemeten resultaat.</p>`
+        }
+        <p class="bewijs-regel">${bewijsmeter(o)}<a href="/werkwijze/#bewijs">Wat betekent dit?</a></p>
+      </section>
+      <section id="bronnen">
+        <h2>Bronnen</h2>
+        <ol class="bronnen">${bronnen}</ol>
+        ${o.gecontroleerd ? `<p class="voetnoot">Bronnen gelezen op ${esc(datumTekst(o.gecontroleerd))}. De beschrijving is van de redactie.</p>` : ""}
+      </section>
     </div>
     <aside class="detail-zij">
-      <dl class="feiten">${feiten}</dl>
-      <button class="knop knop-lijn knop-vol" type="button" data-deel>Kopieer de link</button>
+      <dl class="feiten">
+        <div><dt>Sector</dt><dd><a href="${basis}/oplossingen/?sector=${encodeURIComponent(o.sector)}">${esc(o.sector)}</a></dd></div>
+        <div><dt>Soort</dt><dd><a href="${basis}/oplossingen/?type=${encodeURIComponent(o.type)}">${esc(o.type)}</a></dd></div>
+        <div><dt>Status</dt><dd>${esc(o.sinds ? `${o.status}, sinds ${o.sinds}` : o.status)}</dd></div>
+        <div><dt>Genomineerd</dt><dd>${esc(datumTekst(o.toegevoegd))}${o.herkomst === "inzending" ? ", ingezonden" : ", door de redactie"}</dd></div>
+      </dl>
+      <div id="in-collecties"></div>
       <div class="kader">
         <h2>Is dit jullie oplossing?</h2>
         <p>Vul de beschrijving aan, verbeter een fout of laat de vermelding weghalen.</p>
@@ -199,4 +223,17 @@ export function detailHTML(o, basis = "") {
       </div>
     </aside>
   </div>`;
+}
+
+// Eén regel in de directory.
+export function profielRij(p, plek, basis = "") {
+  return `<li class="dir-rij"><a href="${profielAdres(p.naam, basis)}" data-wijzer="Profiel">
+    <span class="dir-plek">${String(plek).padStart(2, "0")}</span>
+    ${plaatje(p.naam)}
+    <span class="dir-naam"><b>${esc(p.naam)}</b><small>${esc(p.rol)}</small></span>
+    <span class="dir-sectoren">${p.sectoren.slice(0, 3).map((s) => `<i>${esc(s)}</i>`).join("")}</span>
+    <span class="dir-tel"><b>${p.oplossingen.length}</b><small>Werk</small></span>
+    <span class="dir-tel"><b>${p.wairthy ?? 0}</b><small>Wairthy</small></span>
+    <span class="dir-tel"><b>${p.eervol ?? 0}</b><small>Eervol</small></span>
+  </a></li>`;
 }

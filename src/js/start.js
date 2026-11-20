@@ -1,9 +1,13 @@
 import { laadData, toonFout, weeknummer, menu, onthul, BASIS } from "./kern.js";
-import { kaart, esc, adresVan, vlakStijl, etiket, datumTekst, lengteKlas } from "./weergave.js";
-import { poster, kleuren } from "./poster.js";
-import { CRITERIA, bewijs, ranglijst, stand, toonCijfer } from "./score.js";
+import { kaart, esc, adresVan, vlakStijl, etiket, datumTekst, lengteKlas, profielRij, plaatje } from "./weergave.js";
+import { poster } from "./poster.js";
+import { CRITERIA, bewijs, stand, toonCijfer } from "./score.js";
+import { directoryMetStand } from "./indeling.js";
 
 menu();
+
+const DUUR = 7000; // milliseconden per dia
+const RUSTIG = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function tegels(o) {
   const d = o.oordeel;
@@ -22,78 +26,125 @@ function tegels(o) {
     .join("");
 }
 
-function heldHTML(o, label) {
-  return `<div class="held-vlak" style="${vlakStijl(o)}">
+function dia(o, label, i) {
+  return `<article class="held-dia${i === 0 ? " actief" : ""}" style="${vlakStijl(o)}" aria-roledescription="dia" aria-label="${esc(o.naam)}"${i === 0 ? "" : " inert"}>
     <div class="held-poster" aria-hidden="true">${poster(o)}</div>
     <div class="breed held-binnen">
       <p class="held-label">${esc(label)}</p>
       <h2 class="${lengteKlas(o.naam)}"><a href="${esc(adresVan(o, BASIS))}">${esc(o.naam)}</a></h2>
-      <p class="held-org">${esc(o.organisatie)} ${etiket(o)}</p>
+      <p class="held-org">${plaatje(o.organisatie)}<span>${esc(o.organisatie)}</span>${etiket(o)}</p>
       <p class="held-kort">${esc(o.kort)}</p>
       <ul class="held-tegels${o.oordeel?.compleet ? " held-tegels-cijfers" : ""}">${tegels(o)}</ul>
-      <a class="knop knop-op-vlak" href="${esc(adresVan(o, BASIS))}">Bekijk de oplossing</a>
+      <a class="knop knop-op-vlak" href="${esc(adresVan(o, BASIS))}">Bekijk de oplossing <span aria-hidden="true">→</span></a>
     </div>
-  </div>`;
+  </article>`;
 }
 
-function rangkaart(rij, plek) {
-  const eerste = rij.oplossingen[0];
-  return `<article class="rangkaart" data-onthul>
-    <a href="${BASIS}/oplossingen/?zoek=${encodeURIComponent(rij.naam)}">
-      <div class="rangkaart-beeld" style="--vlak:${kleuren(eerste.sector).bg}">${poster(eerste)}<span class="rangkaart-plek">${String(plek).padStart(2, "0")}</span></div>
-      <h3>${esc(rij.naam)}</h3>
-      <dl><div><dt title="Wairthy">Wairthy</dt><dd>${rij.wairthy}</dd></div><div><dt title="Eervolle vermelding">EV</dt><dd>${rij.eervol}</dd></div><div><dt title="In de selectie">Selectie</dt><dd>${rij.totaal}</dd></div></dl>
-    </a>
-  </article>`;
+// De carrousel bovenaan: vijf oplossingen, elk zeven seconden in beeld.
+function carrousel(held, dias) {
+  const els = [...held.querySelectorAll(".held-dia")];
+  const knoppen = [...held.querySelectorAll(".held-streepjes button")];
+  const teller = held.querySelector(".held-teller b");
+  const pauze = held.querySelector("[data-pauze]");
+  let nu = 0;
+  let klok = null;
+  let stil = RUSTIG;
+  const toon = (i) => {
+    nu = (i + els.length) % els.length;
+    els.forEach((el, n) => {
+      el.classList.toggle("actief", n === nu);
+      el.toggleAttribute("inert", n !== nu);
+    });
+    knoppen.forEach((k, n) => {
+      k.classList.toggle("actief", n === nu);
+      k.classList.toggle("geweest", n < nu);
+      k.setAttribute("aria-current", String(n === nu));
+    });
+    teller.textContent = String(nu + 1).padStart(2, "0");
+    plan();
+  };
+  const plan = () => {
+    clearTimeout(klok);
+    held.classList.toggle("stil", stil);
+    if (!stil && els.length > 1) klok = setTimeout(() => toon(nu + 1), DUUR);
+  };
+  knoppen.forEach((k, n) => k.addEventListener("click", () => toon(n)));
+  held.querySelector("[data-vorige]").addEventListener("click", () => toon(nu - 1));
+  held.querySelector("[data-volgende]").addEventListener("click", () => toon(nu + 1));
+  pauze.addEventListener("click", () => {
+    stil = !stil;
+    pauze.textContent = stil ? "Speel af" : "Pauze";
+    plan();
+  });
+  if (stil) pauze.textContent = "Speel af";
+  document.addEventListener("visibilitychange", () => (document.hidden ? clearTimeout(klok) : plan()));
+  held.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") toon(nu + 1);
+    if (e.key === "ArrowLeft") toon(nu - 1);
+  });
+  toon(0);
+  void dias;
 }
 
 try {
   const { oplossingen, jury } = await laadData();
-  const sectoren = new Map();
-  for (const o of oplossingen) sectoren.set(o.sector, (sectoren.get(o.sector) ?? 0) + 1);
+  const sectoren = new Set(oplossingen.map((o) => o.sector));
   const winnaars = oplossingen.filter((o) => ["wairthy", "eervol"].includes(stand(o))).sort((a, b) => (b.uitslag ?? "").localeCompare(a.uitslag ?? "") || b.oordeel.eindcijfer - a.oordeel.eindcijfer);
+  const open = oplossingen.filter((o) => !o.oordeel?.compleet);
 
   document.querySelector("#tel-oplossingen").textContent = oplossingen.length;
   document.querySelector("#tel-sectoren").textContent = sectoren.size;
   document.querySelector("#tel-winnaars").textContent = winnaars.length;
   document.querySelector("#tel-jury").textContent = jury.length;
+  document.querySelector("#tel-open").textContent = open.length;
+  document.querySelector("#tel-win").textContent = winnaars.length || "";
 
-  // Bovenaan staat de nieuwste Wairthy. Is er nog geen, dan een
-  // oplossing die per week wisselt; dat is een keuze van de redactie.
+  // In de schijnwerper: eerst de nieuwste winnaars, aangevuld met
+  // oplossingen die per week wisselen. Dat laatste is een keuze van de
+  // redactie en geen onderscheiding; het label zegt welke van de twee het is.
   const { jaar, week } = weeknummer();
-  const meester = winnaars.find((o) => stand(o) === "wairthy");
-  const kandidaten = oplossingen.filter((o) => o.status === "In productie" && o.resultaat).sort((a, b) => a.id.localeCompare(b.id));
-  const poel = kandidaten.length ? kandidaten : oplossingen;
-  const gekozen = meester ?? poel[(jaar * 53 + week) % poel.length];
-  document.querySelector("#held").innerHTML = heldHTML(gekozen, meester ? `Wairthy · ${datumTekst(meester.uitslag)}` : `Uitgelicht · week ${week}`);
+  const kandidaten = oplossingen.filter((o) => o.status === "In productie" && o.resultaat && !winnaars.includes(o)).sort((a, b) => a.id.localeCompare(b.id));
+  const poel = kandidaten.length ? kandidaten : open;
+  const gekozen = winnaars.slice(0, 3);
+  const gezien = new Set(gekozen.map((o) => o.sector));
+  for (let i = 0; gekozen.length < 5 && i < poel.length; i++) {
+    const o = poel[(jaar * 53 + week + i * 7) % poel.length];
+    if (!gekozen.includes(o) && !gezien.has(o.sector)) (gekozen.push(o), gezien.add(o.sector));
+  }
+  const held = document.querySelector("#held");
+  held.innerHTML = `${gekozen.map((o, i) => dia(o, o.oordeel?.compleet ? `${o.oordeel.onderscheiding?.naam ?? "Beoordeeld"} · ${datumTekst(o.uitslag)}` : `In de schijnwerper · week ${week}`, i)).join("")}
+    <div class="held-bediening"><div class="breed">
+      <span class="held-teller"><b>01</b> / ${String(gekozen.length).padStart(2, "0")}</span>
+      <div class="held-streepjes">${gekozen.map((o, i) => `<button type="button" aria-label="Toon ${esc(o.naam)}" style="--duur:${DUUR}ms"><i></i></button>`).join("")}</div>
+      <button class="held-knop" type="button" data-vorige aria-label="Vorige">←</button>
+      <button class="held-knop" type="button" data-volgende aria-label="Volgende">→</button>
+      <button class="held-knop held-pauze" type="button" data-pauze>Pauze</button>
+    </div></div>`;
+  carrousel(held, gekozen);
+
+  // Het lint: alle namen in de selectie, in twee tegengestelde banen.
+  const namen = oplossingen.map((o) => `<span>${esc(o.naam)}<i>${esc(o.organisatie)}</i></span>`);
+  const helft = Math.ceil(namen.length / 2);
+  const baan = (lijst, klas) => `<div class="lint-baan ${klas}"><div>${lijst.join("")}${lijst.join("")}</div></div>`;
+  document.querySelector("#lint").innerHTML = baan(namen.slice(0, helft), "") + baan(namen.slice(helft), "lint-terug");
 
   // Acht genomineerden, zo veel mogelijk uit verschillende sectoren.
-  const open = oplossingen.filter((o) => o !== gekozen && !o.oordeel?.compleet).sort((a, b) => (b.toegevoegd ?? "").localeCompare(a.toegevoegd ?? "") || a.id.localeCompare(b.id));
-  const gezien = new Set();
+  const rij = open.filter((o) => !gekozen.includes(o)).sort((a, b) => (b.toegevoegd ?? "").localeCompare(a.toegevoegd ?? "") || a.id.localeCompare(b.id));
+  const sectorGezien = new Set();
   const keuze = [];
-  for (const o of open) if (keuze.length < 8 && !gezien.has(o.sector)) (keuze.push(o), gezien.add(o.sector));
-  for (const o of open) if (keuze.length < 8 && !keuze.includes(o)) keuze.push(o);
+  for (const o of rij) if (keuze.length < 8 && !sectorGezien.has(o.sector)) (keuze.push(o), sectorGezien.add(o.sector));
+  for (const o of rij) if (keuze.length < 8 && !keuze.includes(o)) keuze.push(o);
   document.querySelector("#genomineerd").innerHTML = keuze.map((o) => kaart(o, BASIS)).join("");
 
   document.querySelector("#winnaars").innerHTML = winnaars.length
-    ? `<div class="raster raster-4">${winnaars.slice(0, 4).map((o) => kaart(o, BASIS)).join("")}</div>`
+    ? `<div class="raster">${winnaars.slice(0, 4).map((o) => kaart(o, BASIS)).join("")}</div>`
     : `<div class="leegstaat" data-onthul>
         <div><p class="meta">Eerste juryronde</p><h3>De eerste uitslag komt eraan.</h3></div>
-        <p>De jury wordt nu samengesteld. Zodra minstens drie juryleden een oplossing hebben beoordeeld, staat hier de uitslag, met de cijfers per jurylid. Tot die tijd is elke oplossing genomineerd, zonder cijfer.</p>
-        <p class="leegstaat-links"><a class="pijl" href="/werkwijze/">Hoe de jury beoordeelt</a><a class="pijl" href="/voorbeeld/">Bekijk een voorbeeld met cijfers</a></p>
+        <div><p>De jury wordt nu samengesteld. Zodra minstens drie juryleden een oplossing hebben beoordeeld, staat hier de uitslag, met de cijfers per jurylid. Tot die tijd is elke oplossing genomineerd, zonder cijfer.</p>
+        <p class="leegstaat-links"><a class="pijl" href="/werkwijze/">Hoe de jury beoordeelt</a><a class="pijl" href="/voorbeeld/">Bekijk een voorbeeld met cijfers</a></p></div>
       </div>`;
 
-  // Zonder onderscheidingen is er nog geen rangorde; dan telt alleen het aantal.
-  if (!winnaars.length) document.querySelector("#rang").closest("section").querySelector("h2").textContent = "Vaakst in de selectie";
-  document.querySelector("#rang").innerHTML = ranglijst(oplossingen, (o) => [o.organisatie]).slice(0, 4).map((rij, i) => rangkaart(rij, i + 1)).join("");
-
-  document.querySelector("#sectoren").innerHTML = [...sectoren.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([naam, aantal]) => {
-      const k = kleuren(naam);
-      return `<li><a href="${BASIS}/oplossingen/?sector=${encodeURIComponent(naam)}" style="--vlak:${k.bg};--op-vlak:${k.vorm}"><span>${esc(naam)}</span><b>${aantal}</b></a></li>`;
-    })
-    .join("");
+  document.querySelector("#directory-kort").innerHTML = `<ol class="dir">${directoryMetStand(oplossingen).slice(0, 6).map((p, i) => profielRij(p, i + 1, BASIS)).join("")}</ol>`;
   onthul();
 } catch (fout) {
   toonFout(document.querySelector("#held"), fout);

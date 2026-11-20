@@ -1,13 +1,14 @@
 import { laadData, toonFout, menu, onthul, BASIS } from "./kern.js";
-import { kaart, esc, adresVan, etiket, detailHTML, juryLeeg, juryVol } from "./weergave.js";
+import { kaart, esc, adresVan, etiket, detailHTML, scoreHTML } from "./weergave.js";
 import { poster } from "./poster.js";
+import { collectiesVan } from "./indeling.js";
 
 menu();
 
 const doel = document.querySelector("#oplossing");
 
 function buur(o, richting) {
-  return `<a class="buur buur-${richting}" href="${esc(adresVan(o, BASIS))}"><span class="meta">${richting === "vorige" ? "Vorige" : "Volgende"}</span><span class="buur-naam">${esc(o.naam)}</span><span class="buur-org">${esc(o.organisatie)}</span><span class="buur-beeld" aria-hidden="true">${poster(o)}</span></a>`;
+  return `<a class="buur buur-${richting}" href="${esc(adresVan(o, BASIS))}" data-wijzer="${richting === "vorige" ? "←" : "→"}"><span class="buur-beeld" aria-hidden="true">${poster(o)}</span><span class="buur-tekst"><span class="meta">${richting === "vorige" ? "Vorige" : "Volgende"}</span><span class="buur-naam">${esc(o.naam)}</span><span class="buur-org">${esc(o.organisatie)}</span></span></a>`;
 }
 
 try {
@@ -24,7 +25,7 @@ try {
       document.title = `${o.naam} van ${o.organisatie} · Wairthy`;
       doel.innerHTML = detailHTML(o, BASIS);
     }
-    doel.querySelector("#jurypaneel").innerHTML = o.oordeel?.compleet ? juryVol(o, jury) : juryLeeg(o);
+    doel.querySelector("#jurypaneel").innerHTML = scoreHTML(o, jury);
     doel.querySelector("[data-etiket]").innerHTML = etiket(o);
 
     const deel = doel.querySelector("[data-deel]");
@@ -38,6 +39,11 @@ try {
       setTimeout(() => (deel.textContent = "Kopieer de link"), 2500);
     });
 
+    const hoortBij = collectiesVan(o, oplossingen);
+    if (hoortBij.length) {
+      doel.querySelector("#in-collecties").innerHTML = `<div class="tags"><p class="meta">In collecties</p>${hoortBij.map((c) => `<a class="chip" href="${BASIS}/collecties/${c.id}/">${esc(c.naam)}</a>`).join("")}</div>`;
+    }
+
     const rij = oplossingen.slice().sort((a, b) => a.organisatie.localeCompare(b.organisatie, "nl") || a.naam.localeCompare(b.naam, "nl"));
     const plek = rij.indexOf(o);
     if (rij.length > 1) {
@@ -46,7 +52,20 @@ try {
 
     const verwant = oplossingen.filter((x) => x.sector === o.sector && x !== o).slice(0, 4);
     if (verwant.length) {
-      document.querySelector("#verwant").innerHTML = `<div class="blok-kop"><h2>Meer in ${esc(o.sector)}</h2><a class="pijl" href="${BASIS}/oplossingen/?sector=${encodeURIComponent(o.sector)}">Alles in deze sector</a></div><div class="raster raster-4">${verwant.map((x) => kaart(x, BASIS)).join("")}</div>`;
+      document.querySelector("#verwant").innerHTML = `<div class="blok-kop"><h2>Meer in ${esc(o.sector)}</h2><a class="pijl" href="${BASIS}/oplossingen/?sector=${encodeURIComponent(o.sector)}">Alles in deze sector</a></div><div class="raster">${verwant.map((x) => kaart(x, BASIS)).join("")}</div>`;
+    }
+
+    // Markeer in de ankerbalk het deel dat in beeld is.
+    const links = [...doel.querySelectorAll(".anker a")];
+    const kijker = new IntersectionObserver(
+      (items) => {
+        for (const item of items) if (item.isIntersecting) for (const l of links) l.classList.toggle("actief", l.hash === `#${item.target.id}`);
+      },
+      { rootMargin: "-30% 0px -60% 0px" }
+    );
+    for (const l of links) {
+      const deelEl = doel.querySelector(l.hash);
+      if (deelEl) kijker.observe(deelEl);
     }
     onthul();
   }
