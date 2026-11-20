@@ -10,63 +10,63 @@ const keuzes = (lijst) => lijst.map((x) => `<option>${esc(x)}</option>`).join(""
 const honingpot = `<p class="verborgen" aria-hidden="true"><label>Laat dit veld leeg <input name="website" tabindex="-1" autocomplete="off"></label></p>`;
 
 const criteriaBand = (g) => `
-<section class="band band-donker">
+<section class="band">
   <div class="breed">
-    <div class="blok-kop"><h2>Vijf criteria, <em>één cijfer</em></h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p><a class="pijl" href="/werkwijze/">De volledige werkwijze</a></div>
+    <div class="blok-kop"><h2>Vijf criteria, één cijfer</h2><p>Elk jurylid geeft per criterium een cijfer van 1 tot 10. De gewichten bepalen het eindcijfer.</p><a class="pijl" href="/werkwijze/">De volledige werkwijze</a></div>
     <ol class="criteria">
       ${g.CRITERIA.map((c) => `<li data-onthul><span class="gewicht">${c.gewicht}<small>%</small></span><h3>${esc(c.naam)}</h3><p>${esc(c.vraag)}</p></li>`).join("")}
     </ol>
   </div>
 </section>`;
 
-const collectieKaart = (c, basis, g) => `<a class="collectie" href="${basis}/collecties/${c.id}/" data-wijzer="Open">${g.waaier(c.oplossingen)}<p class="meta">Collectie · ${c.oplossingen.length} oplossingen</p><h3>${esc(c.naam)}</h3><p>${esc(c.uitleg)}</p></a>`;
+const collectieKaart = (c, basis, g) => `<a class="collectie" href="${basis}/collecties/${c.id}/"><h3>${esc(c.naam)}<sup>(${c.oplossingen.length})</sup></h3>${g.waaier(c.oplossingen)}<p>${esc(c.uitleg)}</p></a>`;
 
 const start = (g, basis) => `
 <h1 class="sr">Wairthy, de award voor AI die werkt</h1>
 <section class="held" id="held" aria-label="In de schijnwerper" aria-roledescription="carrousel"><div class="breed held-leeg"><p class="meta">De selectie wordt geladen.</p></div></section>
 
-<div class="lint" id="lint" aria-hidden="true"></div>
-
-<section class="breed leus">
-  <p data-onthul>Wairthy is de Nederlandse award voor <em>AI die in de praktijk werkt</em>. Een vakjury beoordeelt elke oplossing op vijf criteria, en alle cijfers zijn openbaar.</p>
-  <dl class="tellers">
-    <div><dd id="tel-oplossingen" data-tel>${g.aantal}</dd><dt>oplossingen in de selectie</dt></div>
-    <div><dd id="tel-sectoren" data-tel>&nbsp;</dd><dt>sectoren</dt></div>
-    <div><dd id="tel-winnaars" data-tel>&nbsp;</dd><dt>onderscheidingen</dt></div>
-    <div><dd id="tel-jury" data-tel>&nbsp;</dd><dt>juryleden</dt></div>
+<section class="leus">
+  <div class="breed">
+    <p>Wairthy is de Nederlandse award voor AI die in de praktijk werkt. Een vakjury beoordeelt elke oplossing op vijf criteria, en alle cijfers zijn openbaar.</p>
+  </div>
+  <dl class="tegels">
+    <div><dd id="tel-oplossingen">${g.aantal}</dd><dt>Oplossingen in de selectie</dt></div>
+    <div><dd id="tel-sectoren">&nbsp;</dd><dt>Sectoren</dt></div>
+    <div><dd id="tel-winnaars">&nbsp;</dd><dt>Onderscheidingen</dt></div>
+    <div><dd id="tel-jury">&nbsp;</dd><dt>Juryleden</dt></div>
   </dl>
 </section>
 
 <section class="breed blok">
-  <div class="blok-kop"><h2>Genomineerd<sup id="tel-open"></sup></h2><p>In de selectie, in afwachting van de jury.</p><a class="pijl" href="${basis}/oplossingen/?stand=genomineerd">Alle genomineerden</a></div>
+  <div class="blok-kop"><h2>Genomineerd<sup>(<span id="tel-open"></span>)</sup></h2><p>In de selectie, in afwachting van de jury.</p><a class="pijl" href="${basis}/oplossingen/?stand=genomineerd">Alle genomineerden</a></div>
   <div class="raster" id="genomineerd"></div>
 </section>
 
 <section class="breed blok" id="winnaars-blok">
-  <div class="blok-kop"><h2>Winnaars<sup id="tel-win"></sup></h2><p>Oplossingen die van de jury een onderscheiding kregen.</p><a class="pijl" href="${basis}/winnaars/">Alle winnaars</a></div>
+  <div class="blok-kop"><h2>Winnaars<sup>(<span id="tel-win">0</span>)</sup></h2><p>Oplossingen die van de jury een onderscheiding kregen.</p><a class="pijl" href="${basis}/winnaars/">Alle winnaars</a></div>
   <div id="winnaars"></div>
 </section>
 
 <section class="blok">
-  <div class="breed blok-kop"><h2>Collecties<sup>${g.collecties.length}</sup></h2><p>De selectie, langs een andere lijn doorgesneden.</p><a class="pijl" href="${basis}/collecties/">Alle collecties</a></div>
+  <div class="breed blok-kop"><h2>Collecties<sup>(${g.collecties.length})</sup></h2><p>De selectie, langs een andere lijn doorgesneden.</p><a class="pijl" href="${basis}/collecties/">Alle collecties</a></div>
   <div class="strook" tabindex="0" aria-label="Collecties">${g.collecties.map((c) => collectieKaart(c, basis, g)).join("")}</div>
 </section>
 
 <section class="breed blok">
-  <div class="blok-kop"><h2>Directory<sup>${g.profielen.length}</sup></h2><p>Wie de oplossingen gebruikt en wie ze bouwt.</p><a class="pijl" href="${basis}/directory/">De hele directory</a></div>
+  <div class="blok-kop"><h2>Directory<sup>(${g.profielen.length})</sup></h2><p>Wie de oplossingen gebruikt en wie ze bouwt.</p><a class="pijl" href="${basis}/directory/">De hele directory</a></div>
   <div id="directory-kort"></div>
 </section>
 
 ${criteriaBand(g)}
 
 <section class="breed blok oproep">
-  <a class="oproep-vlak oproep-zegel" href="/inzenden/" data-wijzer="Inzenden" data-onthul>
+  <a class="oproep-vlak oproep-zegel" href="/inzenden/" data-onthul>
     <p class="meta">Voor makers en opdrachtgevers</p>
     <h2>Zend je oplossing in</h2>
-    <p>Heb je een AI-oplossing gebouwd of in gebruik genomen die laat zien hoe het hoort? Laat de jury ernaar kijken. Inzenden is gratis.</p>
-    <span class="knop">Naar het formulier</span>
+    <p>Heb je een AI-oplossing gebouwd of in gebruik genomen die laat zien hoe het hoort? Laat de jury ernaar kijken.</p>
+    <span class="knop">Naar het formulier</span><span class="hand">inzenden is gratis</span>
   </a>
-  <a class="oproep-vlak oproep-licht" href="/jury/#aanmelden" data-wijzer="Aanmelden" data-onthul>
+  <a class="oproep-vlak oproep-licht" href="/jury/#aanmelden" data-onthul>
     <p class="meta">Voor vakmensen</p>
     <h2>Word jurylid</h2>
     <p>We zoeken mensen die zelf AI-oplossingen bouwen, invoeren of toetsen, en die hun oordeel onder eigen naam willen geven.</p>
@@ -77,7 +77,7 @@ ${criteriaBand(g)}
 const overzicht = (g) => `
 <section class="paginakop">
   <div class="breed">
-    <h1>Oplossingen<sup id="teller-kop">${g.aantal}</sup></h1>
+    <h1>Oplossingen<sup>(<span id="teller-kop">${g.aantal}</span>)</sup></h1>
     <p>Alle AI-oplossingen in de selectie. Elke beschrijving is door de redactie geschreven op basis van bronnen die bij de oplossing staan.</p>
   </div>
 </section>
@@ -128,7 +128,7 @@ const winnaars = () => `
 const directoryPagina = (g) => `
 <section class="paginakop">
   <div class="breed">
-    <h1>Directory<sup>${g.profielen.length}</sup></h1>
+    <h1>Directory<sup>(${g.profielen.length})</sup></h1>
     <p>Iedereen die een oplossing in de selectie gebruikt of heeft gebouwd. De volgorde volgt de onderscheidingen: eerst Wairthy, dan eervolle vermeldingen, dan het aantal oplossingen.</p>
   </div>
 </section>
@@ -147,14 +147,14 @@ const directoryPagina = (g) => `
 const collectiesPagina = (g, basis) => `
 <section class="paginakop">
   <div class="breed">
-    <h1>Collecties<sup>${g.collecties.length}</sup></h1>
+    <h1>Collecties<sup>(${g.collecties.length})</sup></h1>
     <p>Elke collectie is een vaste regel over de selectie: wie eraan voldoet, staat erin. Zo zie je in één oogopslag wat er binnen een soort of een sector gebeurt.</p>
   </div>
 </section>
 <section class="breed"><div class="collecties-raster">${g.collecties.map((c) => collectieKaart(c, basis, g)).join("")}</div></section>`;
 
 const jury = () => `
-<section class="band band-donker paginakop-donker">
+<section class="paginakop">
   <div class="breed">
     <h1>Vakmensen die onder eigen naam oordelen.</h1>
     <p>De jury bestaat uit mensen die zelf AI-oplossingen bouwen, invoeren of toetsen. Hun cijfers en toelichtingen staan bij elke oplossing die ze beoordelen.</p>

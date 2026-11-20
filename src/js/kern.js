@@ -1,5 +1,5 @@
-// Gedeelde bouwstenen voor de browser: gegevens laden, de API, het dok
-// met het ontdekmenu, zoeken, de wijzer en de overgang tussen pagina's.
+// Gedeelde bouwstenen voor de browser: gegevens laden, de API, het
+// ontdekmenu, zoeken, de wijzer en de overgang tussen pagina's.
 import { oordeel } from "./score.js";
 import { kaart, esc, adresVan, plaatje, profielAdres } from "./weergave.js";
 import { poster } from "./poster.js";
@@ -181,7 +181,7 @@ function wijzer() {
     if (e.pointerType !== "mouse") return;
     tx = e.clientX;
     ty = e.clientY;
-    const doel = e.target.closest?.("[data-wijzer]") ?? null;
+    const doel = e.target.closest?.("[data-wijzer-beeld]") ?? null;
     if (doel !== actief) {
       actief = doel;
       el.classList.toggle("aan", Boolean(doel));
@@ -253,8 +253,8 @@ function zoeken() {
     uit.innerHTML =
       groep(q ? "Oplossingen" : "Uit de selectie", opl.map(({ o }) => `<a class="zoek-rij" role="option" href="${esc(adresVan(o, BASIS))}"><span class="zoek-beeld">${poster(o)}</span><span><b>${esc(o.naam)}</b><small>${esc(o.organisatie)} · ${esc(o.sector)}</small></span></a>`)) +
       groep("Organisaties en makers", prof.map((p) => `<a class="zoek-rij" role="option" href="${profielAdres(p.naam, BASIS)}">${plaatje(p.naam)}<span><b>${esc(p.naam)}</b><small>${esc(p.rol)} · ${p.oplossingen.length} in de selectie</small></span></a>`)) +
-      groep("Collecties", col.map((c) => `<a class="zoek-rij" role="option" href="${BASIS}/collecties/${c.id}/"><span class="zoek-teken">◆</span><span><b>${esc(c.naam)}</b><small>${c.oplossingen.length} oplossingen</small></span></a>`)) +
-      groep("Pagina's", pag.map(([naam, adres]) => `<a class="zoek-rij" role="option" href="${adres}"><span class="zoek-teken">→</span><span><b>${esc(naam)}</b></span></a>`));
+      groep("Collecties", col.map((c) => `<a class="zoek-rij" role="option" href="${BASIS}/collecties/${c.id}/"><span class="zoek-teken">(c)</span><span><b>${esc(c.naam)}</b><small>${c.oplossingen.length} oplossingen</small></span></a>`)) +
+      groep("Pagina's", pag.map(([naam, adres]) => `<a class="zoek-rij" role="option" href="${adres}"><span class="zoek-teken">(→)</span><span><b>${esc(naam)}</b></span></a>`));
     if (!uit.innerHTML) uit.innerHTML = `<p class="zoek-leeg">Niets gevonden voor “${esc(veld.value.trim())}”.</p>`;
     keuze = 0;
     markeer();
@@ -295,7 +295,7 @@ function zoeken() {
   });
 }
 
-// Het dok onderaan, het ontdekmenu, het thema en de inlogstatus.
+// Het ontdekmenu, zoeken en de inlogstatus.
 export function menu() {
   const paneel = document.querySelector("#ontdek");
   const knop = document.querySelector("[data-ontdek]");
@@ -308,32 +308,6 @@ export function menu() {
   document.addEventListener("keydown", (e) => e.key === "Escape" && !paneel.hidden && (zet(false), knop.focus()));
   document.addEventListener("click", (e) => {
     if (!paneel.hidden && !e.target.closest("#ontdek, [data-ontdek]")) zet(false);
-  });
-
-  // Het dok duikt weg bij omlaag scrollen en komt terug bij omhoog.
-  const dok = document.querySelector(".dok");
-  let vorige = scrollY;
-  addEventListener(
-    "scroll",
-    () => {
-      const omlaag = scrollY > vorige + 6 && scrollY > 400;
-      const omhoog = scrollY < vorige - 6;
-      if (document.body.classList.contains("ontdek-open")) dok.classList.remove("weg");
-      else if (omlaag) dok.classList.add("weg");
-      else if (omhoog) dok.classList.remove("weg");
-      vorige = scrollY;
-    },
-    { passive: true }
-  );
-
-  document.querySelector("[data-thema-knop]")?.addEventListener("click", () => {
-    const nieuw = html.dataset.thema === "donker" ? "licht" : "donker";
-    html.dataset.thema = nieuw;
-    try {
-      localStorage.setItem("wy-thema", nieuw);
-    } catch {
-      /* geen opslag */
-    }
   });
 
   zoeken();
